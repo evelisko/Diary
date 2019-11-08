@@ -1,0 +1,10 @@
+C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\obj\Debug\Diary.Form1.resources
+C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\obj\Debug\Diary.Properties.Resources.resources
+C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\obj\Debug\Diary.csproj.GenerateResource.cache
+C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\bin\Debug\Diary.exe.config
+C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\bin\Debug\Diary.exe
+C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\bin\Debug\Diary.pdb
+C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\obj\Debug\Diary.csprojAssemblyReference.cache
+C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\obj\Debug\Diary.exe
+C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\obj\Debug\Diary.pdb
+C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\obj\Debug\Diary.AddTaskDialog.resources
