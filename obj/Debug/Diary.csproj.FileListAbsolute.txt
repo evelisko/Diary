@@ -4,7 +4,7 @@ C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\obj\Debug\Diary.csproj.Gene
 C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\bin\Debug\Diary.exe.config
 C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\bin\Debug\Diary.exe
 C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\bin\Debug\Diary.pdb
-C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\obj\Debug\Diary.csprojAssemblyReference.cache
 C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\obj\Debug\Diary.exe
 C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\obj\Debug\Diary.pdb
 C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\obj\Debug\Diary.AddTaskDialog.resources
+C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\obj\Debug\Diary.csprojAssemblyReference.cache

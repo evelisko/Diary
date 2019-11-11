@@ -30,7 +30,7 @@
         {
             this.btnAccept = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
-            this.cmbEndTime = new System.Windows.Forms.ComboBox();
+            this.cmbFinishTime = new System.Windows.Forms.ComboBox();
             this.cmbTaskType = new System.Windows.Forms.ComboBox();
             this.txbTaskName = new System.Windows.Forms.TextBox();
             this.txbLocation = new System.Windows.Forms.TextBox();
@@ -41,8 +41,8 @@
             this.cmbStartTime = new System.Windows.Forms.ComboBox();
             this.label5 = new System.Windows.Forms.Label();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.dateTimePicker1 = new System.Windows.Forms.DateTimePicker();
-            this.dateTimePicker2 = new System.Windows.Forms.DateTimePicker();
+            this.dtpStartDate = new System.Windows.Forms.DateTimePicker();
+            this.dtpFinishDate = new System.Windows.Forms.DateTimePicker();
             this.label4 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
@@ -73,13 +73,14 @@
             // 
             // cmbEndTime
             // 
-            this.cmbEndTime.Font = new System.Drawing.Font("Calibri", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.cmbEndTime.FormatString = "t";
-            this.cmbEndTime.FormattingEnabled = true;
-            this.cmbEndTime.Location = new System.Drawing.Point(466, 230);
-            this.cmbEndTime.Name = "cmbEndTime";
-            this.cmbEndTime.Size = new System.Drawing.Size(137, 43);
-            this.cmbEndTime.TabIndex = 2;
+            this.cmbFinishTime.Font = new System.Drawing.Font("Calibri", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.cmbFinishTime.FormatString = "t";
+            this.cmbFinishTime.FormattingEnabled = true;
+            this.cmbFinishTime.Location = new System.Drawing.Point(466, 230);
+            this.cmbFinishTime.Name = "cmbEndTime";
+            this.cmbFinishTime.Size = new System.Drawing.Size(137, 43);
+            this.cmbFinishTime.TabIndex = 2;
+            this.cmbFinishTime.Leave += new System.EventHandler(this.cmbEndTime_Leave);
             // 
             // cmbTaskType
             // 
@@ -183,21 +184,21 @@
             this.pictureBox1.TabIndex = 14;
             this.pictureBox1.TabStop = false;
             // 
-            // dateTimePicker1
+            // dtpStartDate
             // 
-            this.dateTimePicker1.Font = new System.Drawing.Font("Calibri", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.dateTimePicker1.Location = new System.Drawing.Point(182, 160);
-            this.dateTimePicker1.Name = "dateTimePicker1";
-            this.dateTimePicker1.Size = new System.Drawing.Size(268, 42);
-            this.dateTimePicker1.TabIndex = 15;
+            this.dtpStartDate.Font = new System.Drawing.Font("Calibri", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.dtpStartDate.Location = new System.Drawing.Point(182, 160);
+            this.dtpStartDate.Name = "dtpStartDate";
+            this.dtpStartDate.Size = new System.Drawing.Size(268, 42);
+            this.dtpStartDate.TabIndex = 15;
             // 
-            // dateTimePicker2
+            // dtpEndDate
             // 
-            this.dateTimePicker2.Font = new System.Drawing.Font("Calibri", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.dateTimePicker2.Location = new System.Drawing.Point(181, 230);
-            this.dateTimePicker2.Name = "dateTimePicker2";
-            this.dateTimePicker2.Size = new System.Drawing.Size(268, 42);
-            this.dateTimePicker2.TabIndex = 16;
+            this.dtpFinishDate.Font = new System.Drawing.Font("Calibri", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.dtpFinishDate.Location = new System.Drawing.Point(181, 230);
+            this.dtpFinishDate.Name = "dtpEndDate";
+            this.dtpFinishDate.Size = new System.Drawing.Size(268, 42);
+            this.dtpFinishDate.TabIndex = 16;
             // 
             // label4
             // 
@@ -215,8 +216,8 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(623, 404);
             this.Controls.Add(this.label4);
-            this.Controls.Add(this.dateTimePicker2);
-            this.Controls.Add(this.dateTimePicker1);
+            this.Controls.Add(this.dtpFinishDate);
+            this.Controls.Add(this.dtpStartDate);
             this.Controls.Add(this.pictureBox1);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.label5);
@@ -226,7 +227,7 @@
             this.Controls.Add(this.label2);
             this.Controls.Add(this.txbLocation);
             this.Controls.Add(this.cmbTaskType);
-            this.Controls.Add(this.cmbEndTime);
+            this.Controls.Add(this.cmbFinishTime);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnAccept);
             this.Controls.Add(this.txbTaskName);
@@ -244,7 +245,7 @@
 
         private System.Windows.Forms.Button btnAccept;
         private System.Windows.Forms.Button btnCancel;
-        private System.Windows.Forms.ComboBox cmbEndTime;
+        private System.Windows.Forms.ComboBox cmbFinishTime;
         private System.Windows.Forms.ComboBox cmbTaskType;
         private System.Windows.Forms.TextBox txbTaskName;
         private System.Windows.Forms.TextBox txbLocation;
@@ -255,8 +256,8 @@
         private System.Windows.Forms.ComboBox cmbStartTime;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.PictureBox pictureBox1;
-        private System.Windows.Forms.DateTimePicker dateTimePicker1;
-        private System.Windows.Forms.DateTimePicker dateTimePicker2;
+        private System.Windows.Forms.DateTimePicker dtpStartDate;
+        private System.Windows.Forms.DateTimePicker dtpFinishDate;
         private System.Windows.Forms.Label label4;
     }
 }
