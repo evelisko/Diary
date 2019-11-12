@@ -73,7 +73,7 @@ namespace Diary
           set { txbLocation.Text = value; }
         }
 
-        public DateTime StartTime
+        public DateTime StartDateTime
         {
           get {
                 textToTime(ref StartHour, ref StartMinutes, cmbStartTime.Text);
@@ -90,7 +90,7 @@ namespace Diary
             }
         }
 
-        public DateTime FinishTime
+        public DateTime FinishDateTime
         {
           get {
                 textToTime(ref FinishHour, ref FinishMinutes, cmbFinishTime.Text);
@@ -130,7 +130,7 @@ namespace Diary
             }
             catch(Exception e)
             {
-               MessageBox.Show("Не верный формат записи времени");
+               MessageBox.Show("Не верный формат записи времени"+ e.ToString());
             }
         }
 
@@ -170,6 +170,12 @@ namespace Diary
         private void cmbEndTime_Leave(object sender, EventArgs e)
         {
             textToTime(ref FinishHour, ref FinishMinutes, cmbFinishTime.Text);
+        }
+
+        private void dtpStartDate_ValueChanged(object sender, EventArgs e)
+        {
+            if ((cmbTaskType.Text == "Памятка")||(dtpFinishDate.Value < dtpStartDate.Value)) 
+                dtpFinishDate.Value = dtpStartDate.Value;
         }
 
         private void cmbTaskType_SelectedIndexChanged(object sender, EventArgs e)

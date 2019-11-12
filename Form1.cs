@@ -11,13 +11,6 @@ using System.Data.SqlClient;
 using System.Threading;
 using System.Data.Sql;
 
-// Сформировать сложный запрос с указанием диапазона дней, 
-// для которых задана задача. 
-// Создаем динамический массив с ID номерами всех ячеек на текущий день. 
-// Добавляем и удалаяем значения из массива при редактировании таблицы. 
-// м.б имеет смысл создать еще одну таблицу. которая бы хранила все значения в тени. 
-// При выполнении каждой процедуры производится подключение к базе данных и отключение от не после завершения запроса.  
-
 namespace Diary
 {
     public partial class Form1 : Form
@@ -25,16 +18,16 @@ namespace Diary
         int CurrentMonth, CurrentYear, CurrentDay;
         static string[] Months = { "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь" };
         static string[] Months_padeg = { "Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря" };
-        enum CellsDataBase: int {ID,Day,Month, Year,TaskType,TaskName,StartTime,FinishTime, Location};
+        enum CellsDataBase: int {ID,TaskType,TaskName,StartDateTime,FinishDateTime,Location};
 
         static string strDataBaseName = "TestDataBase"; // Название базы данных.
-        private Color _color = Color.Green;
 
-        int[,] DayWitchTasks; // массив содержащий количество задач для каждого дня  текущего месяца.  
+        int[,] DayWitchTasks; // массив содержащий количество задач для каждого дня текущего месяца.  
         int[] taskIDs;
-        int newIdIndex;       // индекс следующей строки, которая будет создана при добавлении задачи 
 
-        CellsDataBase dbCell; 
+        bool IsTableCreate; 
+
+        DataTable taskValues;  
 
         public Form1()
         {
@@ -46,31 +39,32 @@ namespace Diary
             dGvTasks.AllowUserToDeleteRows = false;
             dGvTasks.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
             dGvTasks.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            // dGvTasks.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
 
-
-            DayWitchTasks = new int[7, 6]; // массив содержащий  информацию о днях месяца для которых есть задачи. 
+            DayWitchTasks = new int[7, 6]; // массив содержащий информацию о днях месяца для которых есть задачи. 
 
             dGvTasks.Columns[0].Width = 90;
             dGvTasks.Columns[1].Width = 90;
             dGvTasks.Columns[2].Width = dGvTasks.Width - 180 - dGvTasks.RowHeadersWidth;
-
-            CreatDataBase();
+            taskValues = new DataTable();  
+            CreatDataBase(); // нужно произвести проверку. удалось ли создать БД.
 
             CurrentMonth = DateTime.Now.Month;
             CurrentYear = DateTime.Now.Year;
             CurrentDay = DateTime.Now.Day;
 
             CalendarRefresh(CurrentYear, CurrentMonth);
-
-            TaskRead();
+            if (IsTableCreate)
+            {            
+              TaskRead();
+            }
         }
 
-        #region События формы
+  #region События формы
 
         private void btnAddTask_Click(object sender, EventArgs e)
         {
-            AddTask();
+            if (IsTableCreate)
+                   AddTask();
         }
 
         private void btnTaskModify_Click(object sender, EventArgs e)
@@ -177,12 +171,15 @@ namespace Diary
                     var topRightPoint = new Point(e.CellBounds.Right, e.CellBounds.Top);
                     var bottomRightPoint = new Point(e.CellBounds.Right, e.CellBounds.Bottom);
                     var bottomleftPoint = new Point(e.CellBounds.Left, e.CellBounds.Bottom);
+                  
+                    // Paint all parts except borders.
+                      e.Paint(e.ClipBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.Border);
 
                     // Draw selected cells here
                     if (this.dGvCalendar[e.ColumnIndex, e.RowIndex].Selected)
                     {
                         // Paint all parts except borders.
-                        e.Paint(e.ClipBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.Border);
+                        // e.Paint(e.ClipBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.Border);
 
                         // Draw selected cells border here
                         // e.Graphics.DrawRectangle(selectedPen, new Rectangle(e.CellBounds.Left, e.CellBounds.Top, e.CellBounds.Width , e.CellBounds.Height));
@@ -196,7 +193,7 @@ namespace Diary
                     else
                     {
                         // Paint all parts except borders.
-                        e.Paint(e.ClipBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.Border);
+                        // e.Paint(e.ClipBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.Border);
 
                         // Top border of first row cells should be in background color
                         //   if (e.RowIndex == 0) 
@@ -237,8 +234,6 @@ namespace Diary
         #endregion
 
         #region Diary
-
-       
         /// <summary>
         /// Производт перерисовку календаря при смене месяца. 
         /// Создает список дней для которых существуют задачи.  
@@ -265,15 +260,15 @@ namespace Diary
             j = ((int)dateValue.DayOfWeek) - 1;
             if (j == -1) j = 6;
 
-            //    Задаем текущую активную ячейку в таблице. 
+            // Задаем текущую активную ячейку в таблице. 
             lastDay = j - 1;
 
             while (lastDay > -1)  // Предыдущий месяц. 
             {
                 dGvCalendar[lastDay, 0].Value = daysInMounthLast.ToString();
                 dGvCalendar.Rows[0].Cells[lastDay].Style.ForeColor = Color.DarkGray;// задаем цвет для ячеек предыдущего месяца. 
-                DayWitchTasks[lastDay,0] = -1; // знак того  что данная ячейка относится к пердыдущему месяцу
-                 daysInMounthLast--;
+                DayWitchTasks[lastDay, 0] = -1; // знак того что данная ячейка относится к пердыдущему месяцу
+                daysInMounthLast--;
                 lastDay--;
             }
 
@@ -283,49 +278,66 @@ namespace Diary
 
             string connStr = (string.Format(@"Data Source=(local)\SQLEXPRESS; Initial Catalog= {0}; Integrated Security=True", strDataBaseName));
             SqlConnection conn = new SqlConnection(connStr);
-            try
-            {
+      
+         if (IsTableCreate)
+            {    
+              try
+              {
                 statusLabel.Text = "Подключение к БД Diary";
                 conn.Open();
-            }
-
+              }
             catch (SqlException se)
-            {
+             {
                 if (se.Number == 4060)
                 {
                     statusLabel.Text = "Ошибка подключения к БД";
                     conn.Close();
                     return;
                 }
-            }
+             }
+         }
 
+            DateTime StartDay = new DateTime(CurrentYear, CurrentMonth, 1, 0, 0, 0);
+            DateTime EndDay = new DateTime(CurrentYear, CurrentMonth, 1, 23, 59, 0);
             k = 1;
             while (k < daysInMounth + 1)  // Текущий месяц
             {
                 if (j > dGvCalendar.ColumnCount - 1) { i++; j = 0; }
 
-                // производим инициализацию списка с задачами 
-                // Выводим значение на экран
-                using (SqlCommand cmd = new SqlCommand("Select COUNT(*) From Diary WHERE Day = @Day AND Month = @Month AND Year = @Year", conn))
+        // производим инициализацию списка с задачами 
+        // Выводим значение на экран
+                using (SqlCommand cmd = new SqlCommand("Select * From Diary WHERE ((StartDateTime >= @StartDay) AND (FinishDateTime <= @EndDay)) OR((StartDateTime <= @EndDay) AND (FinishDateTime >= @StartDay))", conn))
                 {
-
-                    SqlParameter param = new SqlParameter();
-                    param.ParameterName = "@Day"; param.Value = k; param.SqlDbType = SqlDbType.Int;
-                    cmd.Parameters.Add(param);
-
-                    param = new SqlParameter();
-                    param.ParameterName = "@Month"; param.Value = CurrentMonth; param.SqlDbType = SqlDbType.Int;
-                    cmd.Parameters.Add(param);
-
-                    param = new SqlParameter();
-                    param.ParameterName = "@Year"; param.Value = CurrentYear; param.SqlDbType = SqlDbType.Int;
-                    cmd.Parameters.Add(param);
-
-                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    if (IsTableCreate)
                     {
-                        while (dr.Read())
-                            DayWitchTasks[j, i] = Convert.ToInt32(dr.GetValue((int)CellsDataBase.ID).ToString());
+                        SqlParameter param = new SqlParameter();
+                        param.ParameterName = "@StartDay"; param.Value = StartDay; param.SqlDbType = SqlDbType.DateTime;
+                        cmd.Parameters.Add(param);
+
+                        param = new SqlParameter();
+                        param.ParameterName = "@EndDay"; param.Value = EndDay; param.SqlDbType = SqlDbType.DateTime;
+                        cmd.Parameters.Add(param);
+                        DayWitchTasks[j, i] = 0;
+
+                  // посылаем запрос
+                       try
+                        {
+                            using (SqlDataReader dr = cmd.ExecuteReader())
+                            {
+                                while (dr.Read())
+                                {
+                                    DayWitchTasks[j, i]++;
+                                }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            statusLabel.Text = "Ошибка при выполнении запроса к БД " + e.ToString();
+                            return;
+                        }
                     }
+                    StartDay = StartDay.AddDays(1);
+                    EndDay = EndDay.AddDays(1);
 
                     dGvCalendar[j, i].Value = k.ToString();
                     dGvCalendar.Rows[i].Cells[j].Style.ForeColor = Color.Black;
@@ -334,22 +346,21 @@ namespace Diary
                         dGvCalendar[j, i].Selected = true;
                     k++;
                     j++;
-
                 }
             }
-            conn.Close();
+            if (IsTableCreate)
+                  conn.Close();
 
-            // Последующий месяц
+        // Последующий месяц
             k = 1;
             while (j < 7)
             {
                 dGvCalendar[j, i].Value = k.ToString();
-                // задаем цвет для ячеек предыдущего месяца. 
+             // задаем цвет для ячеек предыдущего месяца. 
                 dGvCalendar.Rows[i].Cells[j].Style.ForeColor = Color.DarkGray;  
-                DayWitchTasks[j, i] = -2; // знак того  что данная ячейка относится к следующему месяцу
+                DayWitchTasks[j, i] = -2; // знак того, что данная ячейка относится к следующему месяцу
                 j++;
                 k++;
-          
             }
 
             if (i < dGvCalendar.RowCount - 1)
@@ -358,11 +369,11 @@ namespace Diary
                 j = 0;
                 while (j < 7)
                 {
-                    dGvCalendar[j, i].Value = k.ToString();
-                    dGvCalendar.Rows[i].Cells[j].Style.ForeColor = Color.DarkGray;
-                    DayWitchTasks[j, i] = -2;
-                    j++;
-                    k++;
+                  dGvCalendar[j, i].Value = k.ToString();
+                  dGvCalendar.Rows[i].Cells[j].Style.ForeColor = Color.DarkGray;
+                  DayWitchTasks[j, i] = -2;
+                   j++;
+                   k++;
                 }
             }
         }
@@ -373,9 +384,10 @@ namespace Diary
         ///</summary>
         private void CreatDataBase()
         {
-            string connStr = (string.Format(@"Data Source=(local)\SQLEXPRESS; Initial Catalog= {0}; Integrated Security=True", strDataBaseName));
+            IsTableCreate = false; 
+          string connStr = (string.Format(@"Data Source=(local)\SQLEXPRESS; Initial Catalog= {0}; Integrated Security=True", strDataBaseName));
 
-            /*Здесь указал имя БД(хотя для создания БД его указывать не нужно)
+         /*Здесь указал имя БД(хотя для создания БД его указывать не нужно)
               для того, чтобы проверить, может данная БД уже создана
             Создаем экземпляр класса  SqlConnection по имени conn
             и передаем конструктору этого класса, строку подключения
@@ -421,6 +433,7 @@ namespace Diary
                 SqlCommand cmdCreateTableBase = new SqlCommand("Select * From Diary", conn);
                 cmdCreateTableBase.ExecuteNonQuery();
                 statusLabel.Text = "Таблица Подключена";
+                IsTableCreate = true; 
             }
             catch (SqlException se) // Таблица еще не создана.
             {
@@ -467,7 +480,7 @@ namespace Diary
             }
             catch (SqlException se)
             {
-              if (se.Number == 4060)
+                if (se.Number == 4060)
                 {
                     statusLabel.Text = "Ошибка подключения к БД";
                     conn.Close();
@@ -475,49 +488,35 @@ namespace Diary
                 }
             }
 
-            SqlCommand cmd = new SqlCommand("Select * From Diary WHERE Day = @Day AND Month = @Month AND Year = @Year", conn);
+            AddTaskDialog taskDialog = new AddTaskDialog();
 
-            SqlParameter param = new SqlParameter();
-            param.ParameterName = "@Day"; param.Value = CurrentDay; param.SqlDbType = SqlDbType.Int;
-            cmd.Parameters.Add(param);
+            taskID = Convert.ToInt32(taskValues.Rows[dGvTasks.CurrentRow.Index].ItemArray[(int)CellsDataBase.ID]);
+            taskDialog.TaskName = (taskValues.Rows[dGvTasks.CurrentRow.Index].ItemArray[(int)CellsDataBase.TaskName]).ToString();
+            taskDialog.TaskType = (taskValues.Rows[dGvTasks.CurrentRow.Index].ItemArray[(int)CellsDataBase.TaskType]).ToString();
+            taskDialog.TaskLocation = (taskValues.Rows[dGvTasks.CurrentRow.Index].ItemArray[(int)CellsDataBase.Location]).ToString();
+            taskDialog.StartDateTime = Convert.ToDateTime(taskValues.Rows[dGvTasks.CurrentRow.Index].ItemArray[(int)CellsDataBase.StartDateTime]);
+            taskDialog.FinishDateTime = Convert.ToDateTime(taskValues.Rows[dGvTasks.CurrentRow.Index].ItemArray[(int)CellsDataBase.FinishDateTime]);
 
-            param = new SqlParameter();
-            param.ParameterName = "@Month"; param.Value = CurrentMonth; param.SqlDbType = SqlDbType.Int;
-            cmd.Parameters.Add(param);
 
-            param = new SqlParameter();
-            param.ParameterName = "@Year"; param.Value = CurrentYear; param.SqlDbType = SqlDbType.Int;
-            cmd.Parameters.Add(param);
-
-            SqlDataReader dr = cmd.ExecuteReader();
-            AddTaskDialog taskDialog = new AddTaskDialog(); 
-
-            int i = 0;
-            while (dr.Read())
-            {
-              if (i == dGvTasks.CurrentRow.Index) //Передаем параметры, считанные из БД, в диалоговое окно. 
-                {
-                    taskID = Convert.ToInt32((dr.GetValue((int)CellsDataBase.ID).ToString()).Trim());
-                    taskDialog.TaskName = dr.GetValue((int)CellsDataBase.TaskName).ToString();
-                    taskDialog.TaskType = dr.GetValue((int)CellsDataBase.TaskType).ToString();
-                    taskDialog.TaskLocation = dr.GetValue((int)CellsDataBase.Location).ToString();
-                    taskDialog.StartTime = Convert.ToDateTime(dr.GetValue((int)CellsDataBase.StartTime));
-                    taskDialog.FinishTime = Convert.ToDateTime(dr.GetValue((int)CellsDataBase.FinishTime));
-                    break;
-                }
-                i++;
-            }
 
             conn.Close();
-            taskDialog.ShowDialog(); 
+            taskDialog.ShowDialog();
 
             if (taskDialog.DialogResult != DialogResult.OK) return;
 
             string strTaskName = taskDialog.TaskName;
             string strTaskType = taskDialog.TaskType;
             string strTaskLocation = taskDialog.TaskLocation;
-            DateTime StartTime = taskDialog.StartTime;
-            DateTime FinishTime = taskDialog.FinishTime;
+            DateTime StartDateTime = taskDialog.StartDateTime;
+            DateTime FinishDateTime = taskDialog.FinishDateTime;
+
+
+            taskValues.Rows[dGvTasks.CurrentRow.Index].ItemArray[(int)CellsDataBase.TaskName] = strTaskName;
+            taskValues.Rows[dGvTasks.CurrentRow.Index].ItemArray[(int)CellsDataBase.TaskType] = strTaskType;
+            taskValues.Rows[dGvTasks.CurrentRow.Index].ItemArray[(int)CellsDataBase.Location] = strTaskLocation; 
+            taskValues.Rows[dGvTasks.CurrentRow.Index].ItemArray[(int)CellsDataBase.StartDateTime] = StartDateTime;
+            taskValues.Rows[dGvTasks.CurrentRow.Index].ItemArray[(int)CellsDataBase.FinishDateTime] = FinishDateTime;
+
 
             taskDialog.Close();
 
@@ -535,23 +534,11 @@ namespace Diary
                     return;
                 }
             }
-            // отправляем запрос на изменение выбранной записи в БД.  
-            cmd = new SqlCommand("UPDATE Diary Set TaskType = @TaskType , TaskName = @TaskName , StartTime = @StartTime , FinishTime = @FinishTime , Location =  @Location WHERE ID = @ID AND Day = @Day AND Month = @Month AND Year = @Year", conn);
 
-            param = new SqlParameter();
+            using (SqlCommand cmd = new SqlCommand("UPDATE Diary Set TaskType = @TaskType , TaskName = @TaskName , StartDateTime = @StartDateTime , FinishDateTime = @FinishDateTime , Location =  @Location WHERE ID = @ID", conn))
+            { 
+            SqlParameter param = new SqlParameter();
             param.ParameterName = "@ID"; param.Value = (taskID); param.SqlDbType = SqlDbType.Int;
-            cmd.Parameters.Add(param);
-
-            param = new SqlParameter();
-            param.ParameterName = "@Day"; param.Value = Convert.ToInt16(dGvCalendar.CurrentCell.Value); param.SqlDbType = SqlDbType.Int;
-            cmd.Parameters.Add(param);
-
-            param = new SqlParameter();
-            param.ParameterName = "@Month"; param.Value = CurrentMonth; param.SqlDbType = SqlDbType.Int;
-            cmd.Parameters.Add(param);
-
-            param = new SqlParameter();
-            param.ParameterName = "@Year"; param.Value = CurrentYear; param.SqlDbType = SqlDbType.Int;
             cmd.Parameters.Add(param);
 
             param = new SqlParameter();
@@ -563,11 +550,11 @@ namespace Diary
             cmd.Parameters.Add(param);
 
             param = new SqlParameter();
-            param.ParameterName = "@StartTime"; param.Value = StartTime; param.SqlDbType = SqlDbType.DateTime;
+            param.ParameterName = "@StartDateTime"; param.Value = StartDateTime; param.SqlDbType = SqlDbType.DateTime;
             cmd.Parameters.Add(param);
 
             param = new SqlParameter();
-            param.ParameterName = "@FinishTime"; param.Value = FinishTime; param.SqlDbType = SqlDbType.DateTime;
+            param.ParameterName = "@FinishDateTime"; param.Value = FinishDateTime; param.SqlDbType = SqlDbType.DateTime;
             cmd.Parameters.Add(param);
 
             param = new SqlParameter();
@@ -580,35 +567,52 @@ namespace Diary
             {
               cmd.ExecuteNonQuery();
             }
-            catch (SqlException)
+            catch (SqlException ex)
             {
-              statusLabel.Text = "Ошибка, при выполнении запроса на изменение записи";
-              conn.Close();
-              return;
+                statusLabel.Text = "Ошибка, при выполнении запроса на изменение записи" + ex.ToString();
+                conn.Close();
+                return;
             }
+        }
+          conn.Close();
+          conn.Dispose();
 
-            conn.Close();
-            conn.Dispose();
-            dGvTasks[0, dGvTasks.CurrentRow.Index].Value = strTaskType + "\r\n" + strTaskLocation;
+            if (strTaskLocation != "")
+                dGvTasks[0, dGvTasks.Rows.Count - 1].Value = strTaskType + "\r\n" + strTaskLocation;
+            else
+                dGvTasks[0, dGvTasks.CurrentRow.Index].Value = strTaskType;
 
-  
-            if ((StartTime.Hour == 0) && (StartTime.Minute == 0) && (FinishTime.Hour == 0) && (FinishTime.Minute == 0))
+            if ((StartDateTime.Day == CurrentDay) && (FinishDateTime.Day == CurrentDay))
             {
-                dGvTasks[1, dGvTasks.CurrentRow.Index].Value = "Весь день";
+                if ((StartDateTime.Hour < FinishDateTime.Hour) && (strTaskType != "Памятка"))
+                {
+                    dGvTasks[1, dGvTasks.Rows.Count - 1].Value = StartDateTime.Hour.ToString("00") + ":" + StartDateTime.Minute.ToString("00") + "\r\n" + FinishDateTime.Hour.ToString("00") + ":" + FinishDateTime.Minute.ToString("00");
+                }
+                else
+                {
+                    dGvTasks[1, dGvTasks.Rows.Count - 1].Value = StartDateTime.Hour.ToString("00") + ":" + StartDateTime.Minute.ToString("00");
+                }
             }
             else
-            if ((FinishTime.Hour == 0) && (FinishTime.Minute == 0))
+            if ((StartDateTime.Day == CurrentDay) && (FinishDateTime.Day > CurrentDay) && (StartDateTime.Month == CurrentMonth))
             {
-                dGvTasks[1, dGvTasks.CurrentRow.Index].Value = StartTime.Hour.ToString("00") + ":" + StartTime.Minute.ToString("00") + "\r\n" + FinishTime.Hour.ToString("00") + ":" + FinishTime.Minute.ToString("00");
+                dGvTasks[1, dGvTasks.Rows.Count - 1].Value = "Начало \r\n " + StartDateTime.Hour.ToString("00") + ":" + StartDateTime.Minute.ToString("00");
             }
             else
+            if ((StartDateTime.Day > CurrentDay) && (FinishDateTime.Day == CurrentDay) && (FinishDateTime.Month == CurrentMonth))
             {
-                dGvTasks[1, dGvTasks.CurrentRow.Index].Value = StartTime.Hour.ToString("00") + ":" + StartTime.Minute.ToString("00") + "\r\n" + FinishTime.Hour.ToString("00") + ":" + FinishTime.Minute.ToString("00");
+                dGvTasks[1, dGvTasks.Rows.Count - 1].Value = "Окончание \r\n " + FinishDateTime.Hour.ToString("00") + ":" + FinishDateTime.Minute.ToString("00");
+            }
+            else // if ((StartTime.Day < CurrentDay) && (FinishTime.Day > CurrentDay))
+            {
+                dGvTasks[1, dGvTasks.Rows.Count - 1].Value = "Весь день";
             }
 
             dGvTasks[2, dGvTasks.CurrentRow.Index].Value = strTaskName;
 
             dGvTasks.AutoResizeRows(DataGridViewAutoSizeRowsMode.AllCells);
+
+            CalendarTaskReinitialize(StartDateTime, FinishDateTime, true);
         }
       
         /// <summary>
@@ -623,8 +627,8 @@ namespace Diary
             SqlConnection conn = new SqlConnection(connStr);
             try
             {
-                statusLabel.Text = "Подключение к БД Diary";
-                conn.Open();
+              statusLabel.Text = "Подключение к БД Diary";
+              conn.Open();
             }
 
             catch (SqlException se)
@@ -637,75 +641,93 @@ namespace Diary
                 }
             }
 
-            using (SqlCommand cmd = new SqlCommand("Select * From Diary WHERE Day = @Day AND Month = @Month AND Year = @Year", conn))
+              DateTime StartDay = new DateTime(CurrentYear,CurrentMonth,CurrentDay,0,0,0);
+              DateTime EndDay = new DateTime(CurrentYear, CurrentMonth, CurrentDay, 23, 59, 0);
+
+            // задание условия для считывания задачи. 
+            using (SqlCommand cmd = new SqlCommand("Select * From Diary WHERE ((StartDateTime >= @StartDay) AND (FinishDateTime <= @EndDay)) OR((StartDateTime <= @EndDay) AND (FinishDateTime >= @StartDay))", conn))
             {
                 SqlParameter param = new SqlParameter();
-                param.ParameterName = "@Day"; param.Value = CurrentDay; param.SqlDbType = SqlDbType.Int;
+                param.ParameterName = "@StartDay"; param.Value = StartDay; param.SqlDbType = SqlDbType.DateTime;
                 cmd.Parameters.Add(param);
 
                 param = new SqlParameter();
-                param.ParameterName = "@Month"; param.Value = CurrentMonth; param.SqlDbType = SqlDbType.Int;
+                param.ParameterName = "@EndDay"; param.Value = EndDay; param.SqlDbType = SqlDbType.DateTime;
                 cmd.Parameters.Add(param);
 
-                param = new SqlParameter();
-                param.ParameterName = "@Year"; param.Value = CurrentYear; param.SqlDbType = SqlDbType.Int;
-                cmd.Parameters.Add(param);
 
-                using (SqlDataReader dr = cmd.ExecuteReader())
+                taskValues = new DataTable();
+
+                try
                 {
-                    if (dr.FieldCount < 1)
-                    {
-                        conn.Close();
-                        return;
-                    }
-
-                    taskIDs = new int[DayWitchTasks[dGvCalendar.CurrentCell.ColumnIndex, dGvCalendar.CurrentCell.RowIndex]];
-                    dGvTasks.Rows.Clear();
-
-                    i = 0;
-                    while (dr.Read())
-                    {
-
-                        if (taskIDs.Length > 0) taskIDs[i] = Convert.ToInt32(dr.GetValue((int)CellsDataBase.ID)); 
-                        i++;
-
-                        dGvTasks.Rows.Add(1);
-
-                        DateTime StartTime = Convert.ToDateTime(dr.GetValue((int)CellsDataBase.StartTime));
-                        DateTime FinishTime = Convert.ToDateTime(dr.GetValue((int)CellsDataBase.FinishTime));
-
-                        dGvTasks[0, dGvTasks.Rows.Count - 1].Value = dr.GetValue((int)CellsDataBase.TaskType).ToString() + "\r\n" + dr.GetValue((int)CellsDataBase.Location).ToString();
-
-                        if ((StartTime.Hour == 0) && (StartTime.Minute == 0) && (FinishTime.Hour == 0) && (FinishTime.Minute == 0))
-                        {
-                            dGvTasks[1, dGvTasks.Rows.Count - 1].Value = "Весь день";
-                        }
-                        else
-                        if ((FinishTime.Hour == 0) && (FinishTime.Minute == 0))
-                        {
-                            dGvTasks[1, dGvTasks.Rows.Count - 1].Value = StartTime.Hour.ToString("00") + ":" + StartTime.Minute.ToString("00");
-                        }
-                        else
-                        {
-                            dGvTasks[1, dGvTasks.Rows.Count - 1].Value = StartTime.Hour.ToString("00") + ":" + StartTime.Minute.ToString("00") + "\r\n" + FinishTime.Hour.ToString("00") + ":" + FinishTime.Minute.ToString("00"); ;
-                        }
-
-                        dGvTasks[2, dGvTasks.Rows.Count - 1].Value = dr.GetValue((int)CellsDataBase.TaskName).ToString();
-                        dGvTasks.AutoResizeRows(DataGridViewAutoSizeRowsMode.AllCells);
-                    }
+                    taskValues.Load(cmd.ExecuteReader());
                 }
-            }
+                catch
+                {
+                    statusLabel.Text = "Ошибка считывания из БД";
+                }
+
+                   if (DayWitchTasks[dGvCalendar.CurrentCell.ColumnIndex, dGvCalendar.CurrentCell.RowIndex] > -1)
+                    {
+                      taskIDs = new int[taskValues.Rows.Count]; 
+
+                      DayWitchTasks[dGvCalendar.CurrentCell.ColumnIndex, dGvCalendar.CurrentCell.RowIndex] = taskValues.Rows.Count;
+                    }
+                   
+                    dGvTasks.Rows.Clear();
+                    i = 0;
+                    while (i < taskValues.Rows.Count)
+                    {
+
+                     if (taskIDs.Length > 0) taskIDs[i] = Convert.ToInt32(taskValues.Rows[i].ItemArray[(int)CellsDataBase.ID]); 
+       
+                       dGvTasks.Rows.Add(1);
+
+                        DateTime StartDateTime = Convert.ToDateTime(taskValues.Rows[i].ItemArray[(int)CellsDataBase.StartDateTime]);
+                        DateTime FinishDateTime = Convert.ToDateTime(taskValues.Rows[i].ItemArray[(int)CellsDataBase.FinishDateTime]);
+
+                    if ((taskValues.Rows[i].ItemArray[(int)CellsDataBase.Location]).ToString() != "")
+                            dGvTasks[0, dGvTasks.Rows.Count - 1].Value = (taskValues.Rows[i].ItemArray[(int)CellsDataBase.TaskType]).ToString() + "\r\n" +
+                                (taskValues.Rows[i].ItemArray[(int)CellsDataBase.Location]).ToString();
+                    else
+                        dGvTasks[0, dGvTasks.Rows.Count - 1].Value = (taskValues.Rows[i].ItemArray[(int)CellsDataBase.TaskType]).ToString();
+
+                    if ((StartDateTime.Day == CurrentDay) && (FinishDateTime.Day == CurrentDay))
+                    {
+                        if ((StartDateTime.Hour < FinishDateTime.Hour) && (taskValues.Rows[i].ItemArray[(int)CellsDataBase.TaskType].ToString() != "Памятка"))
+                        {
+                            dGvTasks[1, dGvTasks.Rows.Count - 1].Value = StartDateTime.Hour.ToString("00") + ":" + StartDateTime.Minute.ToString("00") + "\r\n" + FinishDateTime.Hour.ToString("00") + ":" + FinishDateTime.Minute.ToString("00");
+                        }
+                        else
+                        {
+                            dGvTasks[1, dGvTasks.Rows.Count - 1].Value = StartDateTime.Hour.ToString("00") + ":" + StartDateTime.Minute.ToString("00");
+                        }
+                    }
+                    else
+                    if ((StartDateTime.Day == CurrentDay) && (FinishDateTime.Day > CurrentDay) && (StartDateTime.Month == CurrentMonth))
+                    {
+                        dGvTasks[1, dGvTasks.Rows.Count - 1].Value = "Начало \r\n " + StartDateTime.Hour.ToString("00") + ":" + StartDateTime.Minute.ToString("00");
+                    }
+                    else
+                    if ((StartDateTime.Day < CurrentDay) && (FinishDateTime.Day == CurrentDay)&& (FinishDateTime.Month == CurrentMonth))
+                       {
+                         dGvTasks[1, dGvTasks.Rows.Count - 1].Value = "Окончание \r\n " + FinishDateTime.Hour.ToString("00") + ":" + FinishDateTime.Minute.ToString("00");
+                       }
+                    else // if ((StartTime.Day < CurrentDay) && (FinishTime.Day > CurrentDay))
+                     {
+                       dGvTasks[1, dGvTasks.Rows.Count - 1].Value = "Весь день";
+                     }
+
+                     dGvTasks[2, dGvTasks.Rows.Count - 1].Value = (taskValues.Rows[i].ItemArray[(int)CellsDataBase.TaskName]).ToString();
+                       
+                    dGvTasks.AutoResizeRows(DataGridViewAutoSizeRowsMode.AllCells);
+                    i++;
+                  }
+                }
 
             conn.Close();
             conn.Dispose();
-            // Добавляем запись в таблицу просмотра. 
-
-            newIdIndex = 0;
-
-            for (i = 0; i < taskIDs.Length; i++)
-            {
-                if (newIdIndex <= taskIDs[i]) newIdIndex = taskIDs[i] + 1;
-            }
+    // Добавляем запись в таблицу просмотра. 
 
             if (dGvTasks.RowCount > 0)  // Если для текущего дня существуют актмивные задачи делаем видимыми кнопки редактирования и удаления задач.
             {
@@ -719,6 +741,7 @@ namespace Diary
                 btnTaskModify.Visible = false;
                 lblNoTask.Visible = true;
             }
+
         }
 
         /// <summary>
@@ -728,49 +751,45 @@ namespace Diary
         private void CreateNewTable(SqlConnection conn)
         {
             using (SqlCommand cmdCreateTable = new SqlCommand("CREATE TABLE " + " Diary " +
-               "(ID int not null, " +
-               "Day int not null, " +
-               "Month int not null, " +
-               "Year int not null, " +
-               "TaskType text not null, " + //, conn))
+               "(ID int not null PRIMARY KEY IDENTITY, " + // Нумирация записей производится автоматически. 
+               "TaskType text not null, " + 
                "TaskName text not null, " +
-               "StartTime datetime not null, " +
-               "FinishTime datetime not null, " +
-               "Location text not null)", conn))
+               "StartDateTime datetime not null, " +
+               "FinishDateTime datetime not null, " +
+               "Location text not null )", conn))
             {
-                // посылаем запрос
+              // посылаем запрос
                 try
                 {
-                    cmdCreateTable.ExecuteNonQuery();
+                  cmdCreateTable.ExecuteNonQuery();
                 }
                 catch
                 {
-                    statusLabel.Text = "Ошибка при создании таблицы";
-                    return;
+                  statusLabel.Text = "Ошибка при создании таблицы";
+                  return;
                 }
             }
-
             statusLabel.Text = "Таблица создана успешно";
+            IsTableCreate = true; 
         }
 
         /// <summary>
         /// Вызывает диалоговое окно и производит добавление нового события к списку существующих задач.  
         /// </summary>
         private void AddTask()
-        {
-            // вызываем диалоговое окно для редактирования параметров новой задачи. 
+        { // вызываем диалоговое окно для редактирования параметров новой задачи. 
             AddTaskDialog taskDialog = new AddTaskDialog();
 
             taskDialog.CurrentDate = new DateTime(CurrentYear, CurrentMonth, CurrentDay, 0, 0, 0);
 
             taskDialog.ShowDialog();
-            if (taskDialog.DialogResult != DialogResult.OK) return;
+        if (taskDialog.DialogResult != DialogResult.OK) return;
 
             string strTaskName = taskDialog.TaskName;
             string strTaskType = taskDialog.TaskType;
             string strTaskLocation = taskDialog.TaskLocation;
-            DateTime StartTime = taskDialog.StartTime;
-            DateTime FinishTime = taskDialog.FinishTime;
+            DateTime StartDateTime = taskDialog.StartDateTime;
+            DateTime FinishDateTime = taskDialog.FinishDateTime;
 
             taskDialog.Close();
 
@@ -790,37 +809,20 @@ namespace Diary
                     statusLabel.Text = "Ошибка подключения к БД";
                     conn.Close();
                     return;
-
                 }
             }
 
             // узнаем сколько на текущий день задачь уже существует. 
 
-            using (SqlCommand cmd = new SqlCommand("INSERT INTO Diary (ID,Day,Month,Year,TaskType,TaskName,StartTime,FinishTime,Location) Values (@ID,@Day,@Month,@Year,@TaskType,@TaskName,@StartTime,@FinishTime,@Location)", conn))
+            using (SqlCommand cmd = new SqlCommand("INSERT INTO Diary (TaskType,TaskName,StartDateTime,FinishDateTime,Location) Values (@TaskType,@TaskName,@StartDateTime,@FinishDateTime,@Location)", conn))
             {
-                /*Работаем с параметрами(SqlParameter), эта техника позволяет уменьшить
-                кол-во ошибок и достичь большего быстродействия
-                 но требует и больших усилий в написании кода*/
+            /*Работаем с параметрами(SqlParameter), эта техника позволяет уменьшить
+             кол-во ошибок и достичь большего быстродействия
+             но требует и больших усилий в написании кода*/
 
-                // объявляем объект класса SqlParameter
+            // объявляем объект класса SqlParameter
+
                 SqlParameter param = new SqlParameter();
-                // задаем имя параметра
-                param.ParameterName = "@ID"; param.Value = newIdIndex; param.SqlDbType = SqlDbType.Int;
-                cmd.Parameters.Add(param);
-
-                param = new SqlParameter();
-                param.ParameterName = "@Day"; param.Value = Convert.ToInt16(dGvCalendar.CurrentCell.Value); param.SqlDbType = SqlDbType.Int;
-                cmd.Parameters.Add(param);
-
-                param = new SqlParameter();
-                param.ParameterName = "@Month"; param.Value = CurrentMonth; param.SqlDbType = SqlDbType.Int;
-                cmd.Parameters.Add(param);
-
-                param = new SqlParameter();
-                param.ParameterName = "@Year"; param.Value = CurrentYear; param.SqlDbType = SqlDbType.Int;
-                cmd.Parameters.Add(param);
-
-                param = new SqlParameter();
                 param.ParameterName = "@TaskType"; param.Value = strTaskType; param.SqlDbType = SqlDbType.Text;
                 cmd.Parameters.Add(param);
 
@@ -829,11 +831,11 @@ namespace Diary
                 cmd.Parameters.Add(param);
 
                 param = new SqlParameter();
-                param.ParameterName = "@StartTime"; param.Value = StartTime; param.SqlDbType = SqlDbType.DateTime;
+                param.ParameterName = "@StartDateTime"; param.Value = StartDateTime; param.SqlDbType = SqlDbType.DateTime;
                 cmd.Parameters.Add(param);
 
                 param = new SqlParameter();
-                param.ParameterName = "@FinishTime"; param.Value = FinishTime; param.SqlDbType = SqlDbType.DateTime;
+                param.ParameterName = "@FinishDateTime"; param.Value = FinishDateTime; param.SqlDbType = SqlDbType.DateTime;
                 cmd.Parameters.Add(param);
 
                 param = new SqlParameter();
@@ -849,19 +851,18 @@ namespace Diary
                 catch (SqlException)
                 {
                     statusLabel.Text = "Ошибка, при выполнении запроса на добавление записи";
-                    conn.Close();
-                    return;
-                }
+                   conn.Close();
+                   return;
+               }
 
             }
 
             conn.Close();
             conn.Dispose();
 
-         // Увеличиваем количество задач для текущего дня месяца на 1 (это нужно для )
-            DayWitchTasks[dGvCalendar.CurrentCell.ColumnIndex, dGvCalendar.CurrentCell.RowIndex]++;
-            newIdIndex++;
+            CalendarTaskReinitialize(StartDateTime, FinishDateTime, true);
             TaskRead();
+
         }
 
 
@@ -891,22 +892,10 @@ namespace Diary
             }
           
          // Посылаем запрос на удаление записи из таблицы БД. 
-            using (SqlCommand cmd = new SqlCommand("DELETE FROM Diary WHERE ID = @ID AND Day = @Day AND Month = @Month AND Year = @Year", conn))
+            using (SqlCommand cmd = new SqlCommand("DELETE FROM Diary WHERE ID = @ID", conn))
             {
                 SqlParameter param = new SqlParameter();
                 param.ParameterName = "@ID"; param.Value = (taskIDs[dGvTasks.CurrentRow.Index]); param.SqlDbType = SqlDbType.Int;
-                cmd.Parameters.Add(param);
-
-                param = new SqlParameter();
-                param.ParameterName = "@Day"; param.Value = Convert.ToInt16(dGvCalendar.CurrentCell.Value); param.SqlDbType = SqlDbType.Int;
-                cmd.Parameters.Add(param);
-
-                param = new SqlParameter();
-                param.ParameterName = "@Month"; param.Value = CurrentMonth; param.SqlDbType = SqlDbType.Int;
-                cmd.Parameters.Add(param);
-
-                param = new SqlParameter();
-                param.ParameterName = "@Year"; param.Value = CurrentYear; param.SqlDbType = SqlDbType.Int;
                 cmd.Parameters.Add(param);
 
                 statusLabel.Text = "Удаление записи";
@@ -917,18 +906,62 @@ namespace Diary
                 }
                 catch (SqlException)
                 {
-                    statusLabel.Text = "Ошибка, при выполнении запроса на удаление записи";
-                    conn.Close();
-                    return;
+                  statusLabel.Text = "Ошибка, при выполнении запроса на удаление записи";
+                  conn.Close();
+                  return;
                 }
             }
             conn.Close();
             conn.Dispose();
 
-            if (DayWitchTasks[dGvCalendar.CurrentCell.ColumnIndex, dGvCalendar.CurrentCell.RowIndex] > 0)
-                DayWitchTasks[dGvCalendar.CurrentCell.ColumnIndex, dGvCalendar.CurrentCell.RowIndex]--;
-            TaskRead();
+            DateTime StartDateTime = Convert.ToDateTime(taskValues.Rows[dGvTasks.CurrentRow.Index].ItemArray[(int)CellsDataBase.StartDateTime]);
+            DateTime FinishDateTime = Convert.ToDateTime(taskValues.Rows[dGvTasks.CurrentRow.Index].ItemArray[(int)CellsDataBase.FinishDateTime]);
+
+            CalendarTaskReinitialize(StartDateTime, FinishDateTime, false);
+
+           TaskRead();
+
         }
+
+/// <summary>
+/// Обновляет список дней для которых существуют задачи (дела) 
+/// </summary>
+/// <param name="startDate">Дата начальная задачи </param>
+/// <param name="finishDate">Дата Окончания задачи </param>
+/// <param name="TaskIncrement">True - Добавить задачу, false - удалить</param>
+        private void CalendarTaskReinitialize(DateTime startDate,DateTime finishDate, bool TaskIncrement )
+        {
+            DateTime dateValue = new DateTime(CurrentYear, CurrentMonth, 1);
+            int j = ((int)dateValue.DayOfWeek) - 1;
+            int i = 0;
+            int k = 1;
+
+            int daysInMounth = DateTime.DaysInMonth(CurrentYear, CurrentMonth);
+
+            while (k < daysInMounth + 1)  // Текущий месяц
+            {
+                if (j > dGvCalendar.ColumnCount - 1) { i++; j = 0; }
+
+                if ((startDate.Year <= CurrentYear) && (CurrentYear <= finishDate.Year))
+                {
+                    if (((k < startDate.Day)&&(startDate.Month < CurrentMonth)&&(finishDate.Month >= CurrentMonth))||
+                        ((startDate.Day <= k) && (finishDate.Day >= k))||
+                        ((k > finishDate.Day) && (finishDate.Month > CurrentMonth)&&(startDate.Month <= CurrentMonth)))
+                    {
+                        if (TaskIncrement)
+                            DayWitchTasks[j, i]++;
+                        else
+                        if (DayWitchTasks[j, i] > 0)
+                            DayWitchTasks[j, i]--;
+                    }
+                }
+
+                k++;
+                j++;
+            }
+          dGvCalendar.Invalidate(); // Прерисовка таблицы.
+        }
+
     }
     #endregion
 

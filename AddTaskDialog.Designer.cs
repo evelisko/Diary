@@ -71,13 +71,13 @@
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
-            // cmbEndTime
+            // cmbFinishTime
             // 
             this.cmbFinishTime.Font = new System.Drawing.Font("Calibri", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.cmbFinishTime.FormatString = "t";
             this.cmbFinishTime.FormattingEnabled = true;
             this.cmbFinishTime.Location = new System.Drawing.Point(466, 230);
-            this.cmbFinishTime.Name = "cmbEndTime";
+            this.cmbFinishTime.Name = "cmbFinishTime";
             this.cmbFinishTime.Size = new System.Drawing.Size(137, 43);
             this.cmbFinishTime.TabIndex = 2;
             this.cmbFinishTime.Leave += new System.EventHandler(this.cmbEndTime_Leave);
@@ -191,12 +191,13 @@
             this.dtpStartDate.Name = "dtpStartDate";
             this.dtpStartDate.Size = new System.Drawing.Size(268, 42);
             this.dtpStartDate.TabIndex = 15;
+            this.dtpStartDate.ValueChanged += new System.EventHandler(this.dtpStartDate_ValueChanged);
             // 
-            // dtpEndDate
+            // dtpFinishDate
             // 
             this.dtpFinishDate.Font = new System.Drawing.Font("Calibri", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.dtpFinishDate.Location = new System.Drawing.Point(181, 230);
-            this.dtpFinishDate.Name = "dtpEndDate";
+            this.dtpFinishDate.Name = "dtpFinishDate";
             this.dtpFinishDate.Size = new System.Drawing.Size(268, 42);
             this.dtpFinishDate.TabIndex = 16;
             // 
