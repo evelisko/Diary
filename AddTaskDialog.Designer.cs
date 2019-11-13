@@ -146,7 +146,7 @@
             // 
             this.chbAllDay.AutoSize = true;
             this.chbAllDay.Font = new System.Drawing.Font("Calibri", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.chbAllDay.Location = new System.Drawing.Point(455, 87);
+            this.chbAllDay.Location = new System.Drawing.Point(455, 95);
             this.chbAllDay.Name = "chbAllDay";
             this.chbAllDay.Size = new System.Drawing.Size(159, 39);
             this.chbAllDay.TabIndex = 11;

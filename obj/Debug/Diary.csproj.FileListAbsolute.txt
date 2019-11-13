@@ -8,3 +8,13 @@ C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\obj\Debug\Diary.exe
 C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\obj\Debug\Diary.pdb
 C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\obj\Debug\Diary.AddTaskDialog.resources
 C:\Users\Dell\Documents\VisualStudio_Projects1\Diary\obj\Debug\Diary.csprojAssemblyReference.cache
+E:\Загрузки\Diary-master\Diary-master\bin\Debug\Diary.exe.config
+E:\Загрузки\Diary-master\Diary-master\bin\Debug\Diary.exe
+E:\Загрузки\Diary-master\Diary-master\bin\Debug\Diary.pdb
+E:\Загрузки\Diary-master\Diary-master\obj\Debug\Diary.csprojAssemblyReference.cache
+E:\Загрузки\Diary-master\Diary-master\obj\Debug\Diary.AddTaskDialog.resources
+E:\Загрузки\Diary-master\Diary-master\obj\Debug\Diary.Form1.resources
+E:\Загрузки\Diary-master\Diary-master\obj\Debug\Diary.Properties.Resources.resources
+E:\Загрузки\Diary-master\Diary-master\obj\Debug\Diary.csproj.GenerateResource.cache
+E:\Загрузки\Diary-master\Diary-master\obj\Debug\Diary.exe
+E:\Загрузки\Diary-master\Diary-master\obj\Debug\Diary.pdb

@@ -114,7 +114,10 @@ namespace Diary
         {
             if (DayWitchTasks[dGvCalendar.CurrentCell.ColumnIndex, dGvCalendar.CurrentCell.RowIndex] > -1)
             {
-              TaskRead();
+                if (IsTableCreate)
+                {
+                    TaskRead();
+                }
             }
             else
             {
@@ -332,7 +335,7 @@ namespace Diary
                         }
                         catch (Exception e)
                         {
-                            statusLabel.Text = "Ошибка при выполнении запроса к БД " + e.ToString();
+                            statusLabel.Text = "Ошибка при выполнении запроса к БД " /* + e.Message.ToString()*/;
                             return;
                         }
                     }
@@ -424,12 +427,17 @@ namespace Diary
                     conn = new SqlConnection(connStr);
                     conn.Open();
                 }
+                else
+                {
+                    statusLabel.Text = "Ошибка подключения к БД ";
+                 return;
+                }
             }
 
             statusLabel.Text = "Соедение успешно произведено ";
 
             try  // Проверяем созданна ли таблица 
-            {
+            {   
                 SqlCommand cmdCreateTableBase = new SqlCommand("Select * From Diary", conn);
                 cmdCreateTableBase.ExecuteNonQuery();
                 statusLabel.Text = "Таблица Подключена";
@@ -480,12 +488,12 @@ namespace Diary
             }
             catch (SqlException se)
             {
-                if (se.Number == 4060)
-                {
+              //  if (se.Number == 4060)
+              //  {
                     statusLabel.Text = "Ошибка подключения к БД";
                     conn.Close();
                     return;
-                }
+              //  }
             }
 
             AddTaskDialog taskDialog = new AddTaskDialog();
@@ -569,7 +577,7 @@ namespace Diary
             }
             catch (SqlException ex)
             {
-                statusLabel.Text = "Ошибка, при выполнении запроса на изменение записи" + ex.ToString();
+                statusLabel.Text = "Ошибка, при выполнении запроса на изменение записи" /*+ ex.Message.ToString()*/;
                 conn.Close();
                 return;
             }
